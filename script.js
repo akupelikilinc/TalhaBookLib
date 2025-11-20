@@ -1,316 +1,553 @@
-// Tab işlevselliği
-document.addEventListener('DOMContentLoaded', function() {
+const STORAGE_KEY = 'talha-book-shelf-v1';
+const FALLBACK_COVERS = [
+    'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1455885666463-1e31aab57a5d?auto=format&fit=crop&w=600&q=80'
+];
+
+const SAMPLE_BOOKS = [
+    {
+        id: 'sample-1',
+        title: 'Küçük Prens',
+        author: 'Antoine de Saint-Exupéry',
+        category: 'Fantastik',
+        level: '3. Sınıf',
+        pages: 112,
+        finishedDate: '2025-02-12',
+        rating: 4.5,
+        mood: 'Meraklı',
+        notes: 'Tilki ile olan konuşmaları çok sevdi, sorumluluk üzerine konuştuk.',
+        cover: FALLBACK_COVERS[0]
+    },
+    {
+        id: 'sample-2',
+        title: 'Marslı Çocuk',
+        author: 'Lucy Hawking',
+        category: 'Bilim',
+        level: '4. Sınıf',
+        pages: 180,
+        finishedDate: '2025-03-05',
+        rating: 4,
+        mood: 'Heyecanlı',
+        notes: 'Uzay merakı arttı, güneş sistemi maketi yapmak istedi.',
+        cover: FALLBACK_COVERS[1]
+    },
+    {
+        id: 'sample-3',
+        title: 'Define Adası',
+        author: 'Robert L. Stevenson',
+        category: 'Macera',
+        level: '4. Sınıf',
+        pages: 220,
+        finishedDate: '2025-01-28',
+        rating: 5,
+        mood: 'Cesur',
+        notes: 'Karakterlerin cesareti onu çok etkiledi.',
+        cover: FALLBACK_COVERS[2]
+    }
+];
+
+let books = [];
+let filters = { category: 'Hepsi', level: 'Hepsi' };
+let searchTerm = '';
+let editingId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    initBookshelf();
+});
+
+function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
 
-    // Tab değiştirme işlevi
     function switchTab(tabId) {
-        // Tüm tab butonlarından active sınıfını kaldır
         tabButtons.forEach(btn => btn.classList.remove('active'));
-        // Tüm tab panellerini gizle
         tabPanes.forEach(pane => pane.classList.remove('active'));
 
-        // Seçilen tab butonunu aktif yap
         const activeButton = document.querySelector(`[data-tab="${tabId}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
+        if (activeButton) activeButton.classList.add('active');
 
-        // Seçilen tab panelini göster
         const activePane = document.getElementById(tabId);
-        if (activePane) {
-            activePane.classList.add('active');
-        }
+        if (activePane) activePane.classList.add('active');
     }
 
-    // Tab butonlarına tıklama olayı ekle
     tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const tabId = this.getAttribute('data-tab');
-            switchTab(tabId);
+        button.addEventListener('click', () => {
+            switchTab(button.getAttribute('data-tab'));
         });
     });
 
-    // Smooth scroll için
-    const smoothScroll = function(target) {
-        const element = document.querySelector(target);
-        if (element) {
-            element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    };
-
-    // Sosyal medya linklerine hover efekti
-    const socialLinks = document.querySelectorAll('.social-link');
-    socialLinks.forEach(link => {
-        link.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px) scale(1.1)';
-        });
-        
-        link.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
-
-    // Kartlara hover animasyonu
-    const cards = document.querySelectorAll('.app-card, .video-card, .blog-card, .project-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px)';
-            this.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.15)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
-        });
-    });
-
-    // Sayfa yüklendiğinde animasyon
-    window.addEventListener('load', function() {
-        const header = document.querySelector('.header');
-        const tabsSection = document.querySelector('.tabs-section');
-        
-        // Header animasyonu
-        setTimeout(() => {
-            header.style.opacity = '1';
-            header.style.transform = 'translateY(0)';
-        }, 100);
-
-        // Tabs section animasyonu
-        setTimeout(() => {
-            tabsSection.style.opacity = '1';
-            tabsSection.style.transform = 'translateY(0)';
-        }, 300);
-    });
-
-    // Scroll efekti
-    window.addEventListener('scroll', function() {
-        const scrolled = window.pageYOffset;
-        const parallax = document.querySelector('.container');
-        const speed = scrolled * 0.5;
-        
-        if (parallax) {
-            parallax.style.transform = `translateY(${speed}px)`;
-        }
-    });
-
-    // Mobil menü için touch desteği
+    // Touch kaydırma
     let touchStartX = 0;
-    let touchEndX = 0;
-
-    document.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-
+    document.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
     document.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
+        const touchEndX = e.changedTouches[0].screenX;
+        const threshold = 50;
+        const currentIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
+        if (touchEndX < touchStartX - threshold) {
+            const nextIndex = (currentIndex + 1) % tabButtons.length;
+            switchTab(tabButtons[nextIndex].dataset.tab);
+        } else if (touchEndX > touchStartX + threshold) {
+            const prevIndex = currentIndex === 0 ? tabButtons.length - 1 : currentIndex - 1;
+            switchTab(tabButtons[prevIndex].dataset.tab);
+        }
     });
 
-    function handleSwipe() {
-        const swipeThreshold = 50;
-        const currentTabIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-        
-        if (touchEndX < touchStartX - swipeThreshold) {
-            // Sola kaydırma - sonraki tab
-            const nextIndex = (currentTabIndex + 1) % tabButtons.length;
-            const nextTabId = tabButtons[nextIndex].getAttribute('data-tab');
-            switchTab(nextTabId);
-        } else if (touchEndX > touchStartX + swipeThreshold) {
-            // Sağa kaydırma - önceki tab
-            const prevIndex = currentTabIndex === 0 ? tabButtons.length - 1 : currentTabIndex - 1;
-            const prevTabId = tabButtons[prevIndex].getAttribute('data-tab');
-            switchTab(prevTabId);
-        }
-    }
-
-    // Klavye navigasyonu
-    document.addEventListener('keydown', function(e) {
-        const currentTabIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
-        
+    document.addEventListener('keydown', e => {
+        const currentIndex = Array.from(tabButtons).findIndex(btn => btn.classList.contains('active'));
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
             e.preventDefault();
-            const nextIndex = (currentTabIndex + 1) % tabButtons.length;
-            const nextTabId = tabButtons[nextIndex].getAttribute('data-tab');
-            switchTab(nextTabId);
+            const nextIndex = (currentIndex + 1) % tabButtons.length;
+            switchTab(tabButtons[nextIndex].dataset.tab);
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
             e.preventDefault();
-            const prevIndex = currentTabIndex === 0 ? tabButtons.length - 1 : currentTabIndex - 1;
-            const prevTabId = tabButtons[prevIndex].getAttribute('data-tab');
-            switchTab(prevTabId);
+            const prevIndex = currentIndex === 0 ? tabButtons.length - 1 : currentIndex - 1;
+            switchTab(tabButtons[prevIndex].dataset.tab);
         }
     });
 
-    // Lazy loading için Intersection Observer
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
+    window.switchTab = switchTab;
+}
 
-    const observer = new IntersectionObserver(function(entries) {
+function initBookshelf() {
+    loadBooks();
+    bindButtons();
+    bindForm();
+    bindSearch();
+    renderFilters();
+    renderAll();
+    runEntranceAnimations();
+}
+
+function loadBooks() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        books = stored ? JSON.parse(stored) : SAMPLE_BOOKS;
+    } catch (err) {
+        console.warn('Kitaplar okunamadı, örnekler kullanılıyor.', err);
+        books = SAMPLE_BOOKS;
+    }
+}
+
+function saveBooks() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+}
+
+function bindButtons() {
+    document.querySelectorAll('[data-open-panel]').forEach(btn => {
+        btn.addEventListener('click', () => window.switchTab && window.switchTab('panel'));
+    });
+
+    const syncBtn = document.getElementById('headerSync');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', () => {
+            loadBooks();
+            renderAll();
+        });
+    }
+
+    const exportBtn = document.getElementById('exportShelf');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', handleExport);
+    }
+}
+
+function bindSearch() {
+    const searchInput = document.getElementById('bookSearch');
+    if (!searchInput) return;
+    searchInput.addEventListener('input', e => {
+        searchTerm = e.target.value.toLowerCase();
+        renderBooks();
+    });
+}
+
+function bindForm() {
+    const form = document.getElementById('bookForm');
+    const ratingInput = document.getElementById('bookRating');
+    const ratingValue = document.getElementById('ratingValue');
+    const resetBtn = document.getElementById('formResetBtn');
+
+    if (ratingInput && ratingValue) {
+        ratingInput.addEventListener('input', () => {
+            ratingValue.textContent = ratingInput.value;
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            form.reset();
+            editingId = null;
+            document.getElementById('bookSubmitBtn').innerHTML = '<i class="fas fa-save"></i> Kaydet';
+        });
+    }
+
+    if (!form) return;
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const book = {
+            id: editingId || crypto.randomUUID?.() || `book-${Date.now()}`,
+            title: formData.get('title')?.trim() || 'İsimsiz',
+            author: formData.get('author')?.trim() || 'Bilinmiyor',
+            category: formData.get('category') || 'Macera',
+            level: formData.get('level') || '3. Sınıf',
+            pages: Number(formData.get('pages')) || 0,
+            finishedDate: formData.get('finishedDate') || new Date().toISOString().slice(0, 10),
+            rating: Number(formData.get('rating')) || 3,
+            mood: formData.get('mood')?.trim() || 'Mutlu',
+            notes: formData.get('notes')?.trim() || '',
+            cover: formData.get('cover')?.trim() || randomCover()
+        };
+
+        if (editingId) {
+            books = books.map(item => item.id === editingId ? book : item);
+        } else {
+            books = [book, ...books];
+        }
+
+        saveBooks();
+        renderAll();
+        form.reset();
+        ratingInput.value = 4;
+        ratingValue.textContent = '4';
+        editingId = null;
+        document.getElementById('bookSubmitBtn').innerHTML = '<i class="fas fa-save"></i> Kaydet';
+    });
+
+    const panelList = document.getElementById('panelList');
+    if (panelList) {
+        panelList.addEventListener('click', e => {
+            const { target } = e;
+            if (target.matches('button.edit')) {
+                const id = target.dataset.id;
+                startEdit(id);
+            } else if (target.matches('button.delete')) {
+                const id = target.dataset.id;
+                handleDelete(id);
+            }
+        });
+    }
+}
+
+function renderFilters() {
+    const categories = ['Hepsi', ...new Set(books.map(book => book.category))];
+    const levels = ['Hepsi', ...new Set(books.map(book => book.level))];
+
+    const categoryContainer = document.getElementById('categoryFilters');
+    const levelContainer = document.getElementById('levelFilters');
+
+    if (categoryContainer) {
+        categoryContainer.innerHTML = categories.map(cat => `
+            <button class="chip ${filters.category === cat ? 'active' : ''}" data-filter-type="category" data-value="${cat}">
+                ${cat}
+            </button>
+        `).join('');
+    }
+
+    if (levelContainer) {
+        levelContainer.innerHTML = levels.map(level => `
+            <button class="chip ${filters.level === level ? 'active' : ''}" data-filter-type="level" data-value="${level}">
+                ${level}
+            </button>
+        `).join('');
+    }
+
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const type = chip.dataset.filterType;
+            const value = chip.dataset.value;
+            filters[type] = value;
+            renderBooks();
+            updateHeaderStats();
+            renderStats();
+            renderTimeline();
+            renderAchievements();
+            renderPanelList();
+        });
+    });
+}
+
+function renderBooks() {
+    const booksGrid = document.getElementById('booksGrid');
+    const emptyState = document.getElementById('booksEmpty');
+    if (!booksGrid) return;
+
+    const filtered = getFilteredBooks();
+    booksGrid.innerHTML = filtered.map(renderBookCard).join('');
+
+    if (emptyState) {
+        emptyState.style.display = filtered.length ? 'none' : 'block';
+    }
+
+    applyCardAnimations();
+}
+
+function renderBookCard(book) {
+    return `
+        <article class="book-card">
+            <div class="book-cover">
+                <img src="${book.cover}" alt="${book.title}">
+                <span class="book-level">${book.level}</span>
+            </div>
+            <div class="book-content">
+                <h3>${book.title}</h3>
+                <p class="book-author">${book.author}</p>
+                <div class="book-meta">
+                    <span><i class="fas fa-layer-group"></i> ${book.category}</span>
+                    <span><i class="fas fa-bookmark"></i> ${book.pages || '?'} sayfa</span>
+                    <span><i class="fas fa-calendar"></i> ${formatDate(book.finishedDate)}</span>
+                </div>
+                <div class="book-tags">
+                    <span class="tag">${book.mood}</span>
+                    <span class="tag rating">★ ${book.rating.toFixed(1)}</span>
+                </div>
+                <p class="book-notes">${book.notes || 'Henüz not eklenmedi.'}</p>
+            </div>
+        </article>
+    `;
+}
+
+function renderStats() {
+    const totalBooks = books.length;
+    const totalPages = books.reduce((sum, book) => sum + (book.pages || 0), 0);
+    const monthly = books.filter(book => isWithinDays(book.finishedDate, 30));
+    const monthlyBooks = monthly.length;
+    const monthlyMinutes = monthly.reduce((sum, book) => sum + estimateMinutes(book), 0);
+    const moodScore = (books.reduce((sum, book) => sum + (book.rating || 0), 0) / (totalBooks || 1) * 20).toFixed(0);
+    const topCategory = getTopCategory();
+    const favoriteBook = books.sort((a, b) => (b.rating || 0) - (a.rating || 0))[0];
+
+    setText('statTotalBooks', totalBooks);
+    setText('statTotalPages', `${totalPages} sayfa`);
+    setText('statMonthlyBooks', monthlyBooks);
+    setText('statMonthlyMinutes', `${monthlyMinutes} dk (tahmini)`);
+    setText('statLevelAvg', calcLevelAverage());
+    setText('statTopCategory', `Favori tür: ${topCategory || '-'}`);
+    setText('statMoodScore', moodScore);
+    setText('statFavoriteBook', favoriteBook ? favoriteBook.title : 'Henüz favori yok');
+
+    updateHeaderStats();
+    renderAchievements();
+    renderTimeline();
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievementBoard');
+    if (!container) return;
+    const achievements = [];
+
+    if (books.length >= 5) achievements.push({ icon: 'fa-star', text: '5+ kitap' });
+    if (books.some(book => (book.pages || 0) > 200)) achievements.push({ icon: 'fa-mountain', text: 'Uzun soluklu kitap' });
+    if (books.filter(book => book.category === getTopCategory()).length >= 3) achievements.push({ icon: 'fa-fire', text: 'Tür ustası' });
+    if (!achievements.length) achievements.push({ icon: 'fa-seedling', text: 'Yolculuk yeni başlıyor' });
+
+    container.innerHTML = achievements.map(item => `
+        <span class="achievement"><i class="fas ${item.icon}"></i> ${item.text}</span>
+    `).join('');
+}
+
+function renderTimeline() {
+    const container = document.getElementById('readingTimeline');
+    if (!container) return;
+    const months = groupByMonth(books, 6);
+    container.innerHTML = months.map(month => `
+        <div class="timeline-item">
+            <span class="timeline-label">${month.label}</span>
+            <div class="timeline-bar"><span style="width:${month.percent}%"></span></div>
+            <span class="timeline-label">${month.count} kitap</span>
+        </div>
+    `).join('');
+}
+
+function renderPanelList() {
+    const panelList = document.getElementById('panelList');
+    if (!panelList) return;
+    if (!books.length) {
+        panelList.innerHTML = '<p>Henüz kitap yok. Formu kullanarak ilk kaydı oluştur.</p>';
+        return;
+    }
+    panelList.innerHTML = books
+        .sort((a, b) => new Date(b.finishedDate) - new Date(a.finishedDate))
+        .map(book => `
+            <div class="panel-row">
+                <div>
+                    <strong>${book.title}</strong>
+                    <small>${formatDate(book.finishedDate)} • ${book.category}</small>
+                </div>
+                <div class="panel-actions">
+                    <button class="edit" data-id="${book.id}"><i class="fas fa-pen"></i></button>
+                    <button class="delete" data-id="${book.id}"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+}
+
+function startEdit(id) {
+    const book = books.find(item => item.id === id);
+    if (!book) return;
+    const form = document.getElementById('bookForm');
+    if (!form) return;
+    form.title.value = book.title;
+    form.author.value = book.author;
+    form.category.value = book.category;
+    form.level.value = book.level;
+    form.pages.value = book.pages;
+    form.finishedDate.value = book.finishedDate;
+    form.cover.value = book.cover;
+    form.mood.value = book.mood;
+    form.notes.value = book.notes;
+    form.rating.value = book.rating;
+    document.getElementById('ratingValue').textContent = book.rating;
+    editingId = id;
+    document.getElementById('bookSubmitBtn').innerHTML = '<i class="fas fa-pen-to-square"></i> Güncelle';
+    window.switchTab && window.switchTab('panel');
+}
+
+function handleDelete(id) {
+    if (!confirm('Bu kitabı silmek istediğine emin misin?')) return;
+    books = books.filter(book => book.id !== id);
+    saveBooks();
+    renderAll();
+}
+
+function renderAll() {
+    renderFilters();
+    renderBooks();
+    renderStats();
+    renderPanelList();
+}
+
+function getFilteredBooks() {
+    return books
+        .filter(book => filters.category === 'Hepsi' || book.category === filters.category)
+        .filter(book => filters.level === 'Hepsi' || book.level === filters.level)
+        .filter(book => {
+            if (!searchTerm) return true;
+            return [book.title, book.author, book.notes, book.category, book.mood]
+                .some(field => field?.toLowerCase().includes(searchTerm));
+        })
+        .sort((a, b) => new Date(b.finishedDate) - new Date(a.finishedDate));
+}
+
+function updateHeaderStats() {
+    setText('headerTotalBooks', books.length);
+    setText('headerTotalPages', books.reduce((sum, book) => sum + (book.pages || 0), 0));
+    setText('headerTopCategory', getTopCategory() || '-');
+}
+
+function handleExport() {
+    const blob = new Blob([JSON.stringify(books, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'talha-kitap-rafigi.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function applyCardAnimations() {
+    const cards = document.querySelectorAll('.book-card');
+    const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.style.opacity = '1';
                 entry.target.style.transform = 'translateY(0)';
             }
         });
-    }, observerOptions);
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-    // Kartları gözlemle
     cards.forEach(card => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
         card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(card);
     });
+}
 
-    // Performans için debounce fonksiyonu
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Scroll olayını optimize et
-    const optimizedScroll = debounce(function() {
-        // Scroll işlemleri burada
-    }, 16);
-
-    window.addEventListener('scroll', optimizedScroll);
-});
-
-// Sayfa yüklendiğinde başlangıç animasyonları
-document.addEventListener('DOMContentLoaded', function() {
-    // CSS animasyonları için başlangıç stilleri
+function runEntranceAnimations() {
     const header = document.querySelector('.header');
     const tabsSection = document.querySelector('.tabs-section');
-    
     if (header) {
         header.style.opacity = '0';
         header.style.transform = 'translateY(-20px)';
         header.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
     }
-    
     if (tabsSection) {
         tabsSection.style.opacity = '0';
         tabsSection.style.transform = 'translateY(20px)';
         tabsSection.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
     }
-}); 
-
-// YouTube API ile videoları çek ve göster (CORS proxy olmadan)
-const YOUTUBE_API_KEY = 'AIzaSyDnq-5Gr4CRtyPPTvAVSqKoZ_676Ttku8Q';
-const CHANNEL_ID = 'UCDOQkn4DWRdpjoC-obymdHA';
-const MAX_RESULTS = 6;
-
-async function fetchYouTubeVideos() {
-    const grid = document.getElementById('youtubeGrid');
-    const loading = document.getElementById('youtubeLoading');
-    const errorBox = document.getElementById('youtubeError');
-    try {
-        // 1) Serverless proxy (varsa) üzerinden çağır
-        let data = null;
-        try {
-            const resp = await fetch(`/api/youtube?channelId=${encodeURIComponent(CHANNEL_ID)}&max=${MAX_RESULTS}`);
-            if (resp.ok) {
-                data = await resp.json();
-            }
-        } catch (_) {}
-
-        // 2) Proxy yoksa doğrudan YouTube Data API v3'e düş
-        if (!data) {
-            if (!YOUTUBE_API_KEY) throw new Error('API anahtarı gerekli');
-            const videosResp = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=${MAX_RESULTS}`);
-            if (!videosResp.ok) throw new Error(`Video listesi alınamadı (status ${videosResp.status})`);
-            data = await videosResp.json();
+    window.addEventListener('load', () => {
+        if (header) {
+            header.style.opacity = '1';
+            header.style.transform = 'translateY(0)';
         }
-
-        displayVideos(data);
-    } catch (err) {
-        console.error('YouTube hata:', err);
-        if (loading) loading.style.display = 'none';
-        if (errorBox) errorBox.style.display = 'block';
-        displayStaticVideos();
-    } finally {
-        if (loading) loading.style.display = 'none';
-    }
-}
-
-function displayVideos(data) {
-    const youtubeGrid = document.getElementById('youtubeGrid');
-    if (!youtubeGrid) return;
-    youtubeGrid.innerHTML = '';
-
-    if (data.items && data.items.length > 0) {
-        data.items.forEach(item => {
-            if (item.id && (item.id.kind === 'youtube#video' || item.id.videoId)) {
-                const videoId = item.id.videoId || (item.id.kind === 'youtube#video' ? item.id.videoId : null);
-                const snippet = item.snippet;
-                if (!videoId || !snippet) return;
-                const videoCard = document.createElement('div');
-                videoCard.className = 'video-card';
-                videoCard.innerHTML = `
-                    <div class="video-thumbnail">
-                        <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer">
-                            <img src="https://img.youtube.com/vi/${videoId}/maxresdefault.jpg" alt="${snippet.title}">
-                            <div class="play-button"><i class="fas fa-play"></i></div>
-                        </a>
-                    </div>
-                    <div class="video-info">
-                        <h3>${snippet.title}</h3>
-                        <p>${(snippet.description || '').substring(0, 100)}...</p>
-                        <span class="video-date">${snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('tr-TR') : ''}</span>
-                    </div>
-                `;
-                youtubeGrid.appendChild(videoCard);
-            }
-        });
-    }
-    if (!youtubeGrid.children.length) {
-        displayStaticVideos();
-    }
-}
-
-function displayStaticVideos() {
-    const youtubeGrid = document.getElementById('youtubeGrid');
-    if (!youtubeGrid) return;
-    if (youtubeGrid.children.length) return;
-
-    const staticVideos = [
-        { id: 'dQw4w9WgXcQ', title: 'Web Geliştirme İpuçları', description: 'Modern web geliştirme teknikleri ve pratik ipuçları.', date: '1 hafta önce' },
-        { id: 'jNQXAC9IVRw', title: 'Mobil Uygulama Geliştirme', description: 'React Native ile geliştirme süreci.', date: '2 hafta önce' },
-        { id: 'kJQP7kiw5Fk', title: 'UI/UX Tasarım Prensipleri', description: 'Kullanıcı odaklı tasarım prensipleri.', date: '3 hafta önce' }
-    ];
-
-    staticVideos.forEach(video => {
-        const videoCard = document.createElement('div');
-        videoCard.className = 'video-card';
-        videoCard.innerHTML = `
-            <div class="video-thumbnail">
-                <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">
-                    <img src="https://img.youtube.com/vi/${video.id}/maxresdefault.jpg" alt="${video.title}">
-                    <div class="play-button"><i class="fas fa-play"></i></div>
-                </a>
-            </div>
-            <div class="video-info">
-                <h3>${video.title}</h3>
-                <p>${video.description}</p>
-                <span class="video-date">${video.date}</span>
-            </div>
-        `;
-        youtubeGrid.appendChild(videoCard);
+        if (tabsSection) {
+            tabsSection.style.opacity = '1';
+            tabsSection.style.transform = 'translateY(0)';
+        }
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetchYouTubeVideos();
-});
+function randomCover() {
+    return FALLBACK_COVERS[Math.floor(Math.random() * FALLBACK_COVERS.length)];
+}
+
+function estimateMinutes(book) {
+    const pages = book.pages || 0;
+    return Math.round(pages * 1.2);
+}
+
+function calcLevelAverage() {
+    const levelNumbers = books
+        .map(book => Number(book.level?.match(/\d+/)?.[0]))
+        .filter(Boolean);
+    if (!levelNumbers.length) return '-';
+    const avg = levelNumbers.reduce((sum, val) => sum + val, 0) / levelNumbers.length;
+    return `${avg.toFixed(1)}. sınıf`;
+}
+
+function getTopCategory() {
+    if (!books.length) return null;
+    const counts = books.reduce((acc, book) => {
+        acc[book.category] = (acc[book.category] || 0) + 1;
+        return acc;
+    }, {});
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function groupByMonth(items, months = 6) {
+    const now = new Date();
+    const grouped = [];
+    for (let i = months - 1; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const label = date.toLocaleString('tr-TR', { month: 'short' });
+        const count = items.filter(book => {
+            const finished = new Date(book.finishedDate);
+            return finished.getMonth() === date.getMonth() && finished.getFullYear() === date.getFullYear();
+        }).length;
+        grouped.push({ label, count });
+    }
+    const max = Math.max(...grouped.map(item => item.count), 1);
+    return grouped.map(item => ({ ...item, percent: item.count / max * 100 }));
+}
+
+function isWithinDays(dateString, days) {
+    const date = new Date(dateString);
+    const diff = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+    return diff <= days;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}

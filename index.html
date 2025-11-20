@@ -10,237 +10,233 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header Section -->
         <header class="header">
             <div class="profile-section">
                 <div class="profile-image">
-                    <img src="akupelikilinc.jpg" alt="Ahmet KÜPELİKILINÇ">
+                    <img src="akupelikilinc.jpg" alt="Talha KÜPELİKILINÇ'in okuma kulübü">
                 </div>
                 <div class="profile-info">
-                    <h1 class="name">Ahmet KÜPELİKILINÇ</h1>
-                    <p class="title">Yazılım Geliştirici & İçerik Üreticisi</p>
+                    <h1 class="name">Talha KÜPELİKILINÇ • Kitap Rafı</h1>
+                    <p class="title">Her sayfa yeni bir macera!</p>
                     <p class="description">
-                        Mobil uygulama geliştirme, YouTube içerik üretimi ve teknoloji blog yazarlığı konularında tutkulu bir yazılım geliştiricisiyim. 
-                        Modern teknolojiler kullanarak kullanıcı dostu çözümler geliştirmeyi seviyorum.
+                        Bu site Talha KÜPELİKILINÇ'in okuduğu kitapları, hislerini ve aldığı küçük notları saklamak için hazırlandı.
+                        Aile arasında paylaşılan bu dijital kütüphane sayesinde hangi kitabın ne zaman okunduğu,
+                        hangi karakterlerin sevildiği ve hangi fikirlerin ortaya çıktığı unutulmuyor.
                     </p>
-                    <div class="social-links">
-                        <a href="https://github.com/akupelikilinc" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
-                        <a href="https://linkedin.com/in/akupelikilinc" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i></a>
-                        <a href="https://www.youtube.com/@akupelikilinc" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
-                        <a href="https://twitter.com/akupelikilinc" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
-                        <a href="https://www.instagram.com/akupelikilinc/" class="social-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                    <ul class="reading-highlights">
+                        <li>
+                            <span>Bu yıl okunan kitap</span>
+                            <strong id="headerTotalBooks">0</strong>
+                        </li>
+                        <li>
+                            <span>Toplam sayfa</span>
+                            <strong id="headerTotalPages">0</strong>
+                        </li>
+                        <li>
+                            <span>Favori tür</span>
+                            <strong id="headerTopCategory">-</strong>
+                        </li>
+                    </ul>
+                    <div class="header-actions">
+                        <button class="ghost-btn" id="headerSync">
+                            <i class="fas fa-rotate"></i> Verileri yenile
+                        </button>
+                        <button class="primary-btn" data-open-panel>
+                            <i class="fas fa-plus"></i> Yeni kitap ekle
+                        </button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Tabs Section -->
         <section class="tabs-section">
             <div class="tabs">
-                <button class="tab-btn active" data-tab="apps">
-                    <i class="fas fa-mobile-alt"></i>
-                    Mobil Uygulamalarım
+                <button class="tab-btn active" data-tab="books">
+                    <i class="fas fa-book-open"></i>
+                    Kitap Rafı
                 </button>
-                <button class="tab-btn" data-tab="youtube">
-                    <i class="fab fa-youtube"></i>
-                    YouTube Paylaşımlarım
+                <button class="tab-btn" data-tab="journey">
+                    <i class="fas fa-mountain"></i>
+                    Okuma Yolculuğu
                 </button>
-                <button class="tab-btn" data-tab="blog">
-                    <i class="fas fa-blog"></i>
-                    Blog
-                </button>
-                <button class="tab-btn" data-tab="projects">
-                    <i class="fas fa-code"></i>
-                    Projelerim
+                <button class="tab-btn" data-tab="panel">
+                    <i class="fas fa-sliders"></i>
+                    Yönetim Paneli
                 </button>
             </div>
 
-            <!-- Tab Content -->
             <div class="tab-content">
-                <!-- Mobil Uygulamalar Tab -->
-                <div class="tab-pane active" id="apps">
-                    <h2>Mobil Uygulamalarım</h2>
-                    <div class="apps-grid">
-                        <div class="app-card">
-                            <div class="app-icon">
-                                <i class="fas fa-brain"></i>
+                <div class="tab-pane active" id="books">
+                    <div class="section-header">
+                        <div>
+                            <h2>Talha KÜPELİKILINÇ'in Kitap Rafı</h2>
+                            <p class="section-subtitle">Okunan kitaplar, öğrenilen dersler ve küçük notlar burada.</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="ghost-btn" id="exportShelf">
+                                <i class="fas fa-arrow-down"></i> Listeyi dışa aktar
+                            </button>
+                            <button class="primary-btn" data-open-panel>
+                                <i class="fas fa-plus"></i> Kitap ekle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filter-panel">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="bookSearch" placeholder="Kitap, yazar veya not ara...">
+                        </div>
+                        <div class="chip-groups">
+                            <div>
+                                <span class="chip-label">Kategori</span>
+                                <div class="chip-group" id="categoryFilters"></div>
                             </div>
-                            <h3>Memory Match : Brain Training</h3>
-                            <p>Beyin egzersizi ve hafıza geliştirme oyunu. Hafızanızı test edin ve geliştirin.</p>
-                            <div class="app-links">
-                                <a href="https://play.google.com/store/apps/details?id=com.ahmetkupelikilinc.memorygame" class="app-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-google-play"></i> Google Play</a>
+                            <div>
+                                <span class="chip-label">Seviye</span>
+                                <div class="chip-group" id="levelFilters"></div>
                             </div>
                         </div>
-                        <div class="app-card">
-                            <div class="app-icon">
-                                <i class="fas fa-baby"></i>
-                            </div>
-                            <h3>Sleep Sounds for Babies</h3>
-                            <p>Bebekler için rahatlatıcı uyku sesleri. Bebeğinizin huzurlu uyuması için özel tasarlandı.</p>
-                            <div class="app-links">
-                                <a href="https://play.google.com/store/apps/details?id=com.ahmetkupelikilinc.babysleeper" class="app-link" target="_blank" rel="noopener noreferrer"><i class="fab fa-google-play"></i> Google Play</a>
-                            </div>
-                        </div>
+                    </div>
+
+                    <div class="books-grid" id="booksGrid"></div>
+                    <div class="empty-state" id="booksEmpty">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <p>Henüz kitap eklenmedi. Yönetim panelinden ilk kaydı oluştur.</p>
                     </div>
                 </div>
 
-                <!-- YouTube Tab -->
-                <div class="tab-pane" id="youtube">
-                    <h2>YouTube Paylaşımlarım</h2>
-                    <div class="youtube-grid" id="youtubeGrid">
-                        <!-- Videolar dinamik olarak yüklenecek -->
+                <div class="tab-pane" id="journey">
+                    <div class="section-header">
+                        <div>
+                            <h2>Okuma Yolculuğu</h2>
+                            <p class="section-subtitle">İstatistikler, başarı rozeti ve aylık özetler.</p>
+                        </div>
                     </div>
-                    <div id="youtubeLoading" style="text-align:center; margin-top:1rem; color:#808080;">
-                        Videolar yükleniyor...
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Toplam kitap</span>
+                            <strong id="statTotalBooks">0</strong>
+                            <small id="statTotalPages">0 sayfa</small>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Bu ay</span>
+                            <strong id="statMonthlyBooks">0</strong>
+                            <small id="statMonthlyMinutes">0 dakika</small>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Seviye ortalaması</span>
+                            <strong id="statLevelAvg">-</strong>
+                            <small id="statTopCategory">Favori tür: -</small>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Mutluluk puanı</span>
+                            <strong id="statMoodScore">0</strong>
+                            <small id="statFavoriteBook">En sevilen: -</small>
+                        </div>
                     </div>
-                    <div id="youtubeError" style="display:none; text-align:center; margin-top:1rem; color:#ff6b6b;">
-                        Videolar yüklenemedi. Lütfen daha sonra tekrar deneyin.
+
+                    <div class="achievements-card">
+                        <div class="card-title">
+                            <h3>Küçük başarılar</h3>
+                            <p>Her okuma günü ayrı bir yıldız.</p>
+                        </div>
+                        <div class="achievements" id="achievementBoard"></div>
+                    </div>
+
+                    <div class="timeline-card">
+                        <div class="card-title">
+                            <h3>Aylık okuma özeti</h3>
+                            <p>Hangi aylarda hızlandığımızı birlikte görelim.</p>
+                        </div>
+                        <div class="timeline" id="readingTimeline"></div>
                     </div>
                 </div>
 
-                <!-- Blog Tab -->
-                <div class="tab-pane" id="blog">
-                    <h2>Blog Yazılarım</h2>
-                    <div class="blog-grid">
-                        <article class="blog-card">
-                            <div class="blog-image">
-                                <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop&crop=center" alt="Web Geliştirme">
-                            </div>
-                            <div class="blog-content">
-                                <h3>Modern Web Geliştirme Trendleri 2024</h3>
-                                <p>Bu yılın en popüler web geliştirme teknolojileri ve yaklaşımları hakkında detaylı bir analiz.</p>
-                                <div class="blog-meta">
-                                    <span class="blog-date">15 Mart 2024</span>
-                                    <span class="blog-category">Web Geliştirme</span>
-                                </div>
-                                <a href="#" class="read-more" target="_blank" rel="noopener noreferrer">Devamını Oku</a>
-                            </div>
-                        </article>
-                        <article class="blog-card">
-                            <div class="blog-image">
-                                <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=250&fit=crop&crop=center" alt="Mobil Geliştirme">
-                            </div>
-                            <div class="blog-content">
-                                <h3>Mobil Uygulama Performans Optimizasyonu</h3>
-                                <p>Mobil uygulamalarınızın performansını artırmak için uygulayabileceğiniz teknikler.</p>
-                                <div class="blog-meta">
-                                    <span class="blog-date">10 Mart 2024</span>
-                                    <span class="blog-category">Mobil Geliştirme</span>
-                                </div>
-                                <a href="#" class="read-more" target="_blank" rel="noopener noreferrer">Devamını Oku</a>
-                            </div>
-                        </article>
-                        <article class="blog-card">
-                            <div class="blog-image">
-                                <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=250&fit=crop&crop=center" alt="AI ve Makine Öğrenmesi">
-                            </div>
-                            <div class="blog-content">
-                                <h3>AI ve Makine Öğrenmesi Geleceği</h3>
-                                <p>Yapay zeka teknolojilerinin yazılım geliştirme süreçlerine etkileri.</p>
-                                <div class="blog-meta">
-                                    <span class="blog-date">5 Mart 2024</span>
-                                    <span class="blog-category">AI/ML</span>
-                                </div>
-                                <a href="#" class="read-more" target="_blank" rel="noopener noreferrer">Devamını Oku</a>
-                            </div>
-                        </article>
+                <div class="tab-pane" id="panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Yönetim Paneli</h2>
+                            <p class="section-subtitle">Kitap ekle, düzenle, favori listesi oluştur.</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Projeler Tab -->
-                <div class="tab-pane" id="projects">
-                    <h2>Siteler</h2>
-                    <div class="projects-grid">
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-building"></i>
+                    <div class="panel-grid">
+                        <form id="bookForm" class="panel-card">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="bookTitle">Kitap adı</label>
+                                    <input type="text" id="bookTitle" name="title" placeholder="Örn. Küçük Prens" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookAuthor">Yazar</label>
+                                    <input type="text" id="bookAuthor" name="author" placeholder="Örn. Antoine de Saint-Exupéry">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookCategory">Kategori</label>
+                                    <select id="bookCategory" name="category">
+                                        <option value="Macera">Macera</option>
+                                        <option value="Bilim">Bilim</option>
+                                        <option value="Fantastik">Fantastik</option>
+                                        <option value="Tarih">Tarih</option>
+                                        <option value="Eğitici">Eğitici</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookLevel">Okuma seviyesi</label>
+                                    <select id="bookLevel" name="level">
+                                        <option value="1. Sınıf">1. Sınıf</option>
+                                        <option value="2. Sınıf">2. Sınıf</option>
+                                        <option value="3. Sınıf">3. Sınıf</option>
+                                        <option value="4. Sınıf">4. Sınıf</option>
+                                        <option value="5. Sınıf">5. Sınıf</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookPages">Sayfa sayısı</label>
+                                    <input type="number" id="bookPages" name="pages" placeholder="128" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookDate">Bitiş tarihi</label>
+                                    <input type="date" id="bookDate" name="finishedDate">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookCover">Kapak görseli (URL)</label>
+                                    <input type="url" id="bookCover" name="cover" placeholder="https://">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bookMood">Okuma mood'u</label>
+                                    <input type="text" id="bookMood" name="mood" placeholder="Heyecanlı, meraklı...">
+                                </div>
+                                <div class="form-group full">
+                                    <label for="bookNotes">Notlar</label>
+                                    <textarea id="bookNotes" name="notes" rows="4" placeholder="En sevdiğin karakter, öğrendiğin ders..."></textarea>
+                                </div>
+                                <div class="form-group full">
+                                    <label>Beğeni puanı</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="bookRating" name="rating" min="1" max="5" step="0.5" value="4">
+                                        <span id="ratingValue">4</span>/5
+                                    </div>
+                                </div>
                             </div>
-                            <h3>Sayar İnşaat</h3>
-                            <p>Profesyonel inşaat şirketi web sitesi. Modern tasarım ve SEO optimizasyonu ile geliştirildi.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">HTML/CSS</span>
-                                <span class="tech-tag">JavaScript</span>
-                                <span class="tech-tag">WordPress</span>
+                            <div class="form-actions">
+                                <button type="button" class="ghost-btn" id="formResetBtn">
+                                    <i class="fas fa-rotate-left"></i> Temizle
+                                </button>
+                                <button type="submit" class="primary-btn" id="bookSubmitBtn">
+                                    <i class="fas fa-save"></i> Kaydet
+                                </button>
                             </div>
-                            <div class="project-links">
-                                <a href="https://sayarinsaat.com.tr/" class="project-link" target="_blank">Siteyi Ziyaret Et</a>
+                        </form>
+
+                        <div class="panel-card">
+                            <div class="card-title">
+                                <h3>Son eklenen kitaplar</h3>
+                                <p>Kitaplar üzerinde düzenleme veya silme yapabilirsiniz.</p>
                             </div>
-                        </div>
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-truck"></i>
-                            </div>
-                            <h3>Özyılmaz Taşımacılık</h3>
-                            <p>Lojistik ve taşımacılık şirketi web sitesi. Responsive tasarım ve hızlı yükleme süreleri.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">HTML/CSS</span>
-                                <span class="tech-tag">JavaScript</span>
-                                <span class="tech-tag">WordPress</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://ozyilmaztasimacilik.com/" class="project-link" target="_blank">Siteyi Ziyaret Et</a>
-                            </div>
-                        </div>
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-tools"></i>
-                            </div>
-                            <h3>Yerli Oto Makas</h3>
-                            <p>Otomotiv servis şirketi web sitesi. Kullanıcı dostu arayüz ve online randevu sistemi.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">HTML/CSS</span>
-                                <span class="tech-tag">JavaScript</span>
-                                <span class="tech-tag">WordPress</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://yerliotomakas.com/" class="project-link" target="_blank">Siteyi Ziyaret Et</a>
-                            </div>
-                        </div>
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <h3>Miezden Uca</h3>
-                            <p>Romanya'da faaliyet gösteren e-ticaret platformu. Güvenli ödeme sistemleri ve çok dilli destek.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">WooCommerce</span>
-                                <span class="tech-tag">PHP</span>
-                                <span class="tech-tag">MySQL</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://miezdenuca.ro" class="project-link" target="_blank">Siteyi Ziyaret Et</a>
-                            </div>
-                        </div>
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-store"></i>
-                            </div>
-                            <h3>Ayan Market</h3>
-                            <p>İtalya'da faaliyet gösteren online market. Geniş ürün yelpazesi ve hızlı teslimat.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">WooCommerce</span>
-                                <span class="tech-tag">PHP</span>
-                                <span class="tech-tag">MySQL</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="https://ayanmarket.it" class="project-link" target="_blank">Siteyi Ziyaret Et</a>
-                            </div>
-                        </div>
-                        <div class="project-card">
-                            <div class="project-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <h3>Dashboard Uygulaması</h3>
-                            <p>Veri görselleştirme ve analiz dashboard'u. Vue.js ve D3.js ile geliştirildi.</p>
-                            <div class="project-tech">
-                                <span class="tech-tag">Vue.js</span>
-                                <span class="tech-tag">D3.js</span>
-                                <span class="tech-tag">Firebase</span>
-                            </div>
-                            <div class="project-links">
-                                <a href="#" class="project-link">Demo</a>
-                                <a href="#" class="project-link">GitHub</a>
-                            </div>
+                            <div class="panel-list" id="panelList"></div>
                         </div>
                     </div>
                 </div>
