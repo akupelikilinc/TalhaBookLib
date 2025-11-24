@@ -1,36 +1,21 @@
 import express from 'express'
-import { pool } from '../config/database'
-import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth'
+import db from '../config/database'
 
 const router = express.Router()
 
 // Get all settings
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM settings ORDER BY key')
-    const settings: Record<string, any> = {}
-    
-    result.rows.forEach((row) => {
-      let value = row.value
-      if (row.type === 'json') {
-        try {
-          value = JSON.parse(value)
-        } catch {
-          value = value
-        }
-      } else if (row.type === 'boolean') {
-        value = value === 'true'
-      } else if (row.type === 'number') {
-        value = parseFloat(value) || 0
-      }
-      settings[row.key] = {
-        value,
-        type: row.type,
-        description: row.description,
+    const { rows: settings } = await db.query('SELECT * FROM settings')
+    const settingsObj: any = {}
+    settings.forEach((setting: any) => {
+      settingsObj[setting.key] = {
+        value: setting.value,
+        description: setting.description,
+        updated_at: setting.updated_at
       }
     })
-    
-    res.json(settings)
+    res.json(settingsObj)
   } catch (error: any) {
     console.error('Get settings error:', error)
     res.status(500).json({ message: 'Internal server error' })
@@ -40,96 +25,60 @@ router.get('/', async (req, res) => {
 // Get single setting
 router.get('/:key', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM settings WHERE key = $1', [req.params.key])
-    if (result.rows.length === 0) {
+    const { key } = req.params
+    const { rows } = await db.query('SELECT * FROM settings WHERE key = $1', [key])
+    const setting = rows[0]
+
+    if (!setting) {
       return res.status(404).json({ message: 'Setting not found' })
     }
-    
-    const row = result.rows[0]
-    let value = row.value
-    if (row.type === 'json') {
-      try {
-        value = JSON.parse(value)
-      } catch {
-        value = value
-      }
-    } else if (row.type === 'boolean') {
-      value = value === 'true'
-    } else if (row.type === 'number') {
-      value = parseFloat(value) || 0
-    }
-    
-    res.json({ key: row.key, value, type: row.type, description: row.description })
+
+    res.json({ key: setting.key, value: setting.value, description: setting.description })
   } catch (error: any) {
     console.error('Get setting error:', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 })
 
-// Update setting (admin only)
-router.put('/:key', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+// Update setting
+router.put('/:key', async (req, res) => {
   try {
-    const { value } = req.body
-    const result = await pool.query(
-      'SELECT type FROM settings WHERE key = $1',
-      [req.params.key]
-    )
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Setting not found' })
-    }
-    
-    const settingType = result.rows[0].type
-    let processedValue = value
-    
-    if (settingType === 'json') {
-      processedValue = typeof value === 'string' ? value : JSON.stringify(value)
-    } else if (settingType === 'boolean') {
-      processedValue = value ? 'true' : 'false'
-    } else {
-      processedValue = String(value)
-    }
-    
-    const updateResult = await pool.query(
-      'UPDATE settings SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING *',
-      [processedValue, req.params.key]
-    )
-    
-    res.json(updateResult.rows[0])
+    const { key } = req.params
+    const { value, description } = req.body
+
+    const query = `
+      INSERT INTO settings (key, value, description, updated_at)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        description = COALESCE(excluded.description, settings.description),
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *
+    `
+
+    const { rows } = await db.query(query, [key, value, description || null])
+    res.json(rows[0])
   } catch (error: any) {
     console.error('Update setting error:', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 })
 
-// Create setting (admin only)
-router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+// Delete setting
+router.delete('/:key', async (req, res) => {
   try {
-    const { key, value, type = 'text', description } = req.body
-    
-    let processedValue = value
-    if (type === 'json') {
-      processedValue = typeof value === 'string' ? value : JSON.stringify(value)
-    } else if (type === 'boolean') {
-      processedValue = value ? 'true' : 'false'
-    } else {
-      processedValue = String(value)
+    const { key } = req.params
+    const { rowCount } = await db.query('DELETE FROM settings WHERE key = $1', [key])
+
+    if (rowCount === 0) {
+      return res.status(404).json({ message: 'Setting not found' })
     }
-    
-    const result = await pool.query(
-      'INSERT INTO settings (key, value, type, description) VALUES ($1, $2, $3, $4) RETURNING *',
-      [key, processedValue, type, description]
-    )
-    
-    res.status(201).json(result.rows[0])
+
+    res.json({ message: 'Setting deleted successfully' })
   } catch (error: any) {
-    if (error.code === '23505') {
-      return res.status(400).json({ message: 'Setting key already exists' })
-    }
-    console.error('Create setting error:', error)
+    console.error('Delete setting error:', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 })
 
 export default router
-

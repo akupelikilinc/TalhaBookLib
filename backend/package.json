@@ -34,8 +34,7 @@
     "@types/morgan": "^1.9.9",
     "@types/pg": "^8.10.9",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3",
-    "node-pg-migrate": "^6.2.2"
+    "typescript": "^5.3.3"
   }
 }
 

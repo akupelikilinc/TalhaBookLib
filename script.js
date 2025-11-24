@@ -1,4 +1,7 @@
 const STORAGE_KEY = 'talha-book-shelf-v1';
+// API URL - Tek container yapısında her zaman /api kullan
+const API_URL = '/api';
+const USE_BACKEND = true; // Backend aktif
 const FALLBACK_COVERS = [
     'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&w=600&q=80',
@@ -51,6 +54,8 @@ let books = [];
 let filters = { category: 'Hepsi', level: 'Hepsi' };
 let searchTerm = '';
 let editingId = null;
+let settings = {};
+let refreshInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
@@ -110,17 +115,45 @@ function initTabs() {
     window.switchTab = switchTab;
 }
 
-function initBookshelf() {
-    loadBooks();
+async function initBookshelf() {
+    await loadSettings();
+    await loadBooks();
     bindButtons();
     bindForm();
     bindSearch();
     renderFilters();
-    renderAll();
+    await renderAll();
     runEntranceAnimations();
+    startAutoRefresh();
 }
 
-function loadBooks() {
+async function loadBooks() {
+    if (USE_BACKEND) {
+        try {
+            const response = await fetch(`${API_URL}/books`);
+            if (response.ok) {
+                const data = await response.json();
+                books = data.map(book => ({
+                    id: book.id.toString(),
+                    title: book.title,
+                    author: book.author || 'Bilinmiyor',
+                    category: book.category || 'Macera',
+                    level: book.level || '3. Sınıf',
+                    pages: book.pages || 0,
+                    finishedDate: book.finished_date || new Date().toISOString().slice(0, 10),
+                    rating: parseFloat(book.rating) || 3,
+                    mood: book.mood || 'Mutlu',
+                    notes: book.notes || '',
+                    cover: book.cover_url || randomCover()
+                }));
+                return;
+            }
+        } catch (err) {
+            console.warn('Backend\'den kitaplar yüklenemedi, localStorage kullanılıyor.', err);
+        }
+    }
+    
+    // Fallback to localStorage
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         books = stored ? JSON.parse(stored) : SAMPLE_BOOKS;
@@ -130,7 +163,12 @@ function loadBooks() {
     }
 }
 
-function saveBooks() {
+async function saveBooks() {
+    if (USE_BACKEND) {
+        // Backend kullanıldığında her kitap için ayrı ayrı kaydet
+        // Bu basit bir implementasyon, gerçek uygulamada batch update kullanılabilir
+        return;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
 }
 
@@ -141,9 +179,9 @@ function bindButtons() {
 
     const syncBtn = document.getElementById('headerSync');
     if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
-            loadBooks();
-            renderAll();
+        syncBtn.addEventListener('click', async () => {
+            await loadBooks();
+            await renderAll();
         });
     }
 
@@ -184,31 +222,104 @@ function bindForm() {
 
     if (!form) return;
 
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
         e.preventDefault();
         const formData = new FormData(form);
-        const book = {
-            id: editingId || crypto.randomUUID?.() || `book-${Date.now()}`,
+        const bookData = {
             title: formData.get('title')?.trim() || 'İsimsiz',
             author: formData.get('author')?.trim() || 'Bilinmiyor',
             category: formData.get('category') || 'Macera',
             level: formData.get('level') || '3. Sınıf',
             pages: Number(formData.get('pages')) || 0,
-            finishedDate: formData.get('finishedDate') || new Date().toISOString().slice(0, 10),
+            finished_date: formData.get('finishedDate') || new Date().toISOString().slice(0, 10),
             rating: Number(formData.get('rating')) || 3,
             mood: formData.get('mood')?.trim() || 'Mutlu',
             notes: formData.get('notes')?.trim() || '',
-            cover: formData.get('cover')?.trim() || randomCover()
+            cover_url: formData.get('cover')?.trim() || randomCover()
         };
 
-        if (editingId) {
-            books = books.map(item => item.id === editingId ? book : item);
+        if (USE_BACKEND) {
+            try {
+                const url = editingId ? `${API_URL}/books/${editingId}` : `${API_URL}/books`;
+                const method = editingId ? 'PUT' : 'POST';
+                const token = localStorage.getItem('auth_token'); // JWT token için
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    body: JSON.stringify(bookData)
+                });
+
+                if (response.ok) {
+                    const savedBook = await response.json();
+                    const book = {
+                        id: savedBook.id.toString(),
+                        title: savedBook.title,
+                        author: savedBook.author || 'Bilinmiyor',
+                        category: savedBook.category || 'Macera',
+                        level: savedBook.level || '3. Sınıf',
+                        pages: savedBook.pages || 0,
+                        finishedDate: savedBook.finished_date || new Date().toISOString().slice(0, 10),
+                        rating: parseFloat(savedBook.rating) || 3,
+                        mood: savedBook.mood || 'Mutlu',
+                        notes: savedBook.notes || '',
+                        cover: savedBook.cover_url || randomCover()
+                    };
+
+                    if (editingId) {
+                        books = books.map(item => item.id === editingId ? book : item);
+                    } else {
+                        books = [book, ...books];
+                    }
+                } else {
+                    alert('Kitap kaydedilemedi. Lütfen tekrar deneyin.');
+                    return;
+                }
+            } catch (err) {
+                console.error('Backend kayıt hatası:', err);
+                alert('Backend bağlantı hatası. LocalStorage kullanılıyor.');
+                // Fallback to localStorage
+                const book = {
+                    id: editingId || crypto.randomUUID?.() || `book-${Date.now()}`,
+                    ...bookData,
+                    finishedDate: bookData.finished_date,
+                    cover: bookData.cover_url
+                };
+                if (editingId) {
+                    books = books.map(item => item.id === editingId ? book : item);
+                } else {
+                    books = [book, ...books];
+                }
+                await saveBooks();
+            }
         } else {
-            books = [book, ...books];
+            // LocalStorage mode
+            const book = {
+                id: editingId || crypto.randomUUID?.() || `book-${Date.now()}`,
+                title: bookData.title,
+                author: bookData.author,
+                category: bookData.category,
+                level: bookData.level,
+                pages: bookData.pages,
+                finishedDate: bookData.finished_date,
+                rating: bookData.rating,
+                mood: bookData.mood,
+                notes: bookData.notes,
+                cover: bookData.cover_url
+            };
+
+            if (editingId) {
+                books = books.map(item => item.id === editingId ? book : item);
+            } else {
+                books = [book, ...books];
+            }
+            await saveBooks();
         }
 
-        saveBooks();
-        renderAll();
+        await renderAll();
         form.reset();
         ratingInput.value = 4;
         ratingValue.textContent = '4';
@@ -309,7 +420,32 @@ function renderBookCard(book) {
     `;
 }
 
-function renderStats() {
+async function renderStats() {
+    if (USE_BACKEND) {
+        try {
+            const response = await fetch(`${API_URL}/books/stats/summary`);
+            if (response.ok) {
+                const stats = await response.json();
+                setText('statTotalBooks', stats.totalBooks || 0);
+                setText('statTotalPages', `${stats.totalPages || 0} sayfa`);
+                setText('statMonthlyBooks', stats.monthlyBooks || 0);
+                setText('statMonthlyMinutes', `${Math.round((stats.totalPages || 0) * 0.5)} dk (tahmini)`);
+                setText('statLevelAvg', calcLevelAverage());
+                setText('statTopCategory', `Favori tür: ${stats.topCategory || '-'}`);
+                setText('statMoodScore', Math.round((stats.avgRating || 0) * 20));
+                setText('statFavoriteBook', stats.favoriteBook || 'Henüz favori yok');
+                
+                updateHeaderStatsFromBackend(stats);
+                renderAchievements();
+                renderTimeline();
+                return;
+            }
+        } catch (err) {
+            console.warn('Backend stats yüklenemedi, local hesaplama kullanılıyor.', err);
+        }
+    }
+    
+    // Fallback to local calculation
     const totalBooks = books.length;
     const totalPages = books.reduce((sum, book) => sum + (book.pages || 0), 0);
     const monthly = books.filter(book => isWithinDays(book.finishedDate, 30));
@@ -405,17 +541,38 @@ function startEdit(id) {
     window.switchTab && window.switchTab('panel');
 }
 
-function handleDelete(id) {
+async function handleDelete(id) {
     if (!confirm('Bu kitabı silmek istediğine emin misin?')) return;
+    
+    if (USE_BACKEND) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${API_URL}/books/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                }
+            });
+            
+            if (!response.ok) {
+                alert('Kitap silinemedi. Lütfen tekrar deneyin.');
+                return;
+            }
+        } catch (err) {
+            console.error('Backend silme hatası:', err);
+            alert('Backend bağlantı hatası. LocalStorage\'dan siliniyor.');
+        }
+    }
+    
     books = books.filter(book => book.id !== id);
-    saveBooks();
-    renderAll();
+    await saveBooks();
+    await renderAll();
 }
 
-function renderAll() {
+async function renderAll() {
     renderFilters();
     renderBooks();
-    renderStats();
+    await renderStats();
     renderPanelList();
 }
 
@@ -435,6 +592,12 @@ function updateHeaderStats() {
     setText('headerTotalBooks', books.length);
     setText('headerTotalPages', books.reduce((sum, book) => sum + (book.pages || 0), 0));
     setText('headerTopCategory', getTopCategory() || '-');
+}
+
+function updateHeaderStatsFromBackend(stats) {
+    setText('headerTotalBooks', stats.totalBooks || 0);
+    setText('headerTotalPages', stats.totalPages || 0);
+    setText('headerTopCategory', stats.topCategory || '-');
 }
 
 function handleExport() {
@@ -550,4 +713,64 @@ function formatDate(dateString) {
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+// Settings yükleme
+async function loadSettings() {
+    if (!USE_BACKEND) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/settings`);
+        if (response.ok) {
+            settings = await response.json();
+            applySettings();
+        }
+    } catch (err) {
+        console.warn('Settings yüklenemedi:', err);
+    }
+}
+
+// Settings'i sayfaya uygula
+function applySettings() {
+    // Site başlığı
+    if (settings.site_title?.value) {
+        document.title = settings.site_title.value;
+        const nameEl = document.querySelector('.name');
+        if (nameEl) nameEl.textContent = settings.site_title.value;
+    }
+    
+    // Alt başlık
+    if (settings.site_subtitle?.value) {
+        const titleEl = document.querySelector('.title');
+        if (titleEl) titleEl.textContent = settings.site_subtitle.value;
+    }
+    
+    // Açıklama
+    if (settings.site_description?.value) {
+        const descEl = document.querySelector('.description');
+        if (descEl) descEl.textContent = settings.site_description.value;
+    }
+    
+    // Profil resmi
+    if (settings.profile_image?.value) {
+        const imgEl = document.querySelector('.profile-image img');
+        if (imgEl) imgEl.src = settings.profile_image.value;
+    }
+}
+
+// Otomatik yenileme
+function startAutoRefresh() {
+    if (!USE_BACKEND) return;
+    
+    const interval = parseInt(settings.auto_refresh_interval?.value || '30000');
+    
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+    
+    refreshInterval = setInterval(async () => {
+        await loadSettings();
+        await loadBooks();
+        await renderAll();
+    }, interval);
 }

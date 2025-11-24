@@ -15,7 +15,7 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/index.ts", "src/config/**/*", "src/routes/books.ts"],
+  "exclude": ["node_modules", "dist", "src/routes/apps.ts", "src/routes/auth.ts", "src/routes/blog.ts", "src/routes/projects.ts", "src/routes/settings.ts", "src/routes/youtube.ts", "src/middleware/**/*"]
 }
 

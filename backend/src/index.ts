@@ -3,21 +3,28 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
-import { pool } from './config/database'
-import authRoutes from './routes/auth'
-import appsRoutes from './routes/apps'
-import blogRoutes from './routes/blog'
-import projectsRoutes from './routes/projects'
-import youtubeRoutes from './routes/youtube'
+import db from './config/database'
+import { initDatabase } from './config/init-db'
+import booksRoutes from './routes/books'
 import settingsRoutes from './routes/settings'
+import authRoutes from './routes/auth'
 
 dotenv.config()
+
+// Initialize database
+// Initialize database
+initDatabase().catch(err => {
+  console.error('Failed to initialize database:', err)
+  process.exit(1)
+})
 
 const app = express()
 const PORT = process.env.PORT || 5000
 
 // Middleware
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: false, // Allow inline scripts for frontend
+}))
 app.use(cors())
 app.use(morgan('dev'))
 app.use(express.json())
@@ -26,7 +33,7 @@ app.use(express.urlencoded({ extended: true }))
 // Health check
 app.get('/health', async (req, res) => {
   try {
-    await pool.query('SELECT 1')
+    await db.query('SELECT 1')
     res.json({ status: 'ok', database: 'connected' })
   } catch (error) {
     res.status(500).json({ status: 'error', database: 'disconnected' })
@@ -34,12 +41,9 @@ app.get('/health', async (req, res) => {
 })
 
 // API Routes
-app.use('/api/auth', authRoutes)
-app.use('/api/apps', appsRoutes)
-app.use('/api/blog', blogRoutes)
-app.use('/api/projects', projectsRoutes)
-app.use('/api/youtube', youtubeRoutes)
+app.use('/api/books', booksRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/auth', authRoutes)
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -59,7 +63,6 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server')
-  await pool.end()
+  await db.end()
   process.exit(0)
 })
-

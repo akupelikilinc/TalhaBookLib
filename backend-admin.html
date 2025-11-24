@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Admin - Talha'nın Kitap Rafı</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .admin-header {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .admin-header h1 {
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+        .admin-header p {
+            color: #a0a0a0;
+        }
+        .api-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        .api-status.connected {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        .api-status.disconnected {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .admin-panel {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 2rem;
+        }
+        .admin-panel h2 {
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        .books-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .book-item {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #1f1f1f;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .book-item h3 {
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .book-item p {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
+        }
+        .book-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .btn-small {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .btn-edit {
+            background: #333333;
+            color: #c0c0c0;
+            border: 1px solid #666666;
+        }
+        .btn-edit:hover {
+            background: #c0c0c0;
+            color: #000000;
+        }
+        .btn-delete {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+        .btn-delete:hover {
+            background: rgba(255, 0, 0, 0.3);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            color: #c0c0c0;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #f8f8f8;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #c0c0c0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-box {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #1f1f1f;
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-box strong {
+            display: block;
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+        }
+        .stat-box span {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-server"></i> Backend Admin Paneli</h1>
+            <p>Talha KÜPELİKILINÇ - Kitap Rafı API Yönetimi</p>
+            <div class="api-status" id="apiStatus">
+                <i class="fas fa-circle"></i> Bağlantı kontrol ediliyor...
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="admin-panel">
+                <h2><i class="fas fa-list"></i> Kitaplar Listesi</h2>
+                <div class="books-list" id="booksList">
+                    <p style="color: #808080; text-align: center;">Yükleniyor...</p>
+                </div>
+                <button class="primary-btn" onclick="loadBooks()" style="width: 100%; margin-top: 1rem;">
+                    <i class="fas fa-sync"></i> Yenile
+                </button>
+            </div>
+
+            <div class="admin-panel">
+                <h2><i class="fas fa-plus-circle"></i> Yeni Kitap Ekle</h2>
+                <form id="bookForm">
+                    <div class="form-group">
+                        <label>Kitap Adı *</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Yazar</label>
+                        <input type="text" id="author">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select id="category">
+                            <option value="Macera">Macera</option>
+                            <option value="Bilim">Bilim</option>
+                            <option value="Fantastik">Fantastik</option>
+                            <option value="Tarih">Tarih</option>
+                            <option value="Eğitici">Eğitici</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Seviye</label>
+                        <select id="level">
+                            <option value="1. Sınıf">1. Sınıf</option>
+                            <option value="2. Sınıf">2. Sınıf</option>
+                            <option value="3. Sınıf">3. Sınıf</option>
+                            <option value="4. Sınıf">4. Sınıf</option>
+                            <option value="5. Sınıf">5. Sınıf</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sayfa Sayısı</label>
+                        <input type="number" id="pages" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş Tarihi</label>
+                        <input type="date" id="finished_date">
+                    </div>
+                    <div class="form-group">
+                        <label>Beğeni Puanı (1-5)</label>
+                        <input type="number" id="rating" min="1" max="5" step="0.1" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label>Mood</label>
+                        <input type="text" id="mood" placeholder="Örn: Heyecanlı, Meraklı">
+                    </div>
+                    <div class="form-group">
+                        <label>Kapak URL</label>
+                        <input type="url" id="cover_url" placeholder="https://">
+                    </div>
+                    <div class="form-group">
+                        <label>Notlar</label>
+                        <textarea id="notes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="primary-btn" style="width: 100%;">
+                        <i class="fas fa-save"></i> Kitap Ekle
+                    </button>
+                </form>
+            </div>
+
+            <div class="admin-panel">
+                <h2><i class="fas fa-cog"></i> Site Ayarları</h2>
+                <div id="settingsList" style="margin-bottom: 1rem;">
+                    <p style="color: #808080; text-align: center;">Yükleniyor...</p>
+                </div>
+                <button class="primary-btn" onclick="loadSettings()" style="width: 100%;">
+                    <i class="fas fa-sync"></i> Ayarları Yenile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let editingId = null;
+
+        // API durumunu kontrol et
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL.replace('/api', '')}/health`);
+                const data = await response.json();
+                const statusEl = document.getElementById('apiStatus');
+                if (data.status === 'ok') {
+                    statusEl.className = 'api-status connected';
+                    statusEl.innerHTML = '<i class="fas fa-circle"></i> API Bağlı';
+                } else {
+                    statusEl.className = 'api-status disconnected';
+                    statusEl.innerHTML = '<i class="fas fa-circle"></i> API Bağlantı Hatası';
+                }
+            } catch (error) {
+                const statusEl = document.getElementById('apiStatus');
+                statusEl.className = 'api-status disconnected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> API Bağlantı Hatası';
+            }
+        }
+
+        // İstatistikleri yükle
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/books/stats/summary`);
+                const stats = await response.json();
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-box">
+                        <strong>${stats.totalBooks}</strong>
+                        <span>Toplam Kitap</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>${stats.totalPages}</strong>
+                        <span>Toplam Sayfa</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>${stats.avgRating.toFixed(1)}</strong>
+                        <span>Ortalama Puan</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong>${stats.monthlyBooks}</strong>
+                        <span>Bu Ay</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Stats yüklenemedi:', error);
+            }
+        }
+
+        // Kitapları yükle
+        async function loadBooks() {
+            try {
+                const response = await fetch(`${API_URL}/books`);
+                const books = await response.json();
+                const booksList = document.getElementById('booksList');
+                
+                if (books.length === 0) {
+                    booksList.innerHTML = '<p style="color: #808080; text-align: center;">Henüz kitap eklenmedi.</p>';
+                    return;
+                }
+
+                booksList.innerHTML = books.map(book => `
+                    <div class="book-item">
+                        <h3>${book.title}</h3>
+                        <p><strong>Yazar:</strong> ${book.author || 'Bilinmiyor'}</p>
+                        <p><strong>Kategori:</strong> ${book.category || '-'} | <strong>Seviye:</strong> ${book.level || '-'}</p>
+                        <p><strong>Sayfa:</strong> ${book.pages || 0} | <strong>Puan:</strong> ${book.rating || 0}/5</p>
+                        <p><strong>Bitiş:</strong> ${book.finished_date || '-'}</p>
+                        <div class="book-actions">
+                            <button class="btn-small btn-edit" onclick="editBook(${book.id})">
+                                <i class="fas fa-edit"></i> Düzenle
+                            </button>
+                            <button class="btn-small btn-delete" onclick="deleteBook(${book.id})">
+                                <i class="fas fa-trash"></i> Sil
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Kitaplar yüklenemedi:', error);
+                document.getElementById('booksList').innerHTML = '<p style="color: #ff6b6b; text-align: center;">Kitaplar yüklenemedi. API bağlantısını kontrol edin.</p>';
+            }
+        }
+
+        // Kitap ekle/düzenle
+        document.getElementById('bookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                category: document.getElementById('category').value,
+                level: document.getElementById('level').value,
+                pages: parseInt(document.getElementById('pages').value) || 0,
+                finished_date: document.getElementById('finished_date').value || null,
+                rating: parseFloat(document.getElementById('rating').value) || 3,
+                mood: document.getElementById('mood').value || null,
+                notes: document.getElementById('notes').value || null,
+                cover_url: document.getElementById('cover_url').value || null
+            };
+
+            try {
+                const url = editingId ? `${API_URL}/books/${editingId}` : `${API_URL}/books`;
+                const method = editingId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert(editingId ? 'Kitap güncellendi!' : 'Kitap eklendi!');
+                    document.getElementById('bookForm').reset();
+                    editingId = null;
+                    loadBooks();
+                    loadStats();
+                } else {
+                    const error = await response.json();
+                    alert('Hata: ' + (error.message || 'Bilinmeyen hata'));
+                }
+            } catch (error) {
+                console.error('Form gönderme hatası:', error);
+                alert('Kitap kaydedilemedi. API bağlantısını kontrol edin.');
+            }
+        });
+
+        // Kitap düzenle
+        async function editBook(id) {
+            try {
+                const response = await fetch(`${API_URL}/books/${id}`);
+                const book = await response.json();
+                
+                document.getElementById('title').value = book.title || '';
+                document.getElementById('author').value = book.author || '';
+                document.getElementById('category').value = book.category || 'Macera';
+                document.getElementById('level').value = book.level || '3. Sınıf';
+                document.getElementById('pages').value = book.pages || 0;
+                document.getElementById('finished_date').value = book.finished_date || '';
+                document.getElementById('rating').value = book.rating || 3;
+                document.getElementById('mood').value = book.mood || '';
+                document.getElementById('cover_url').value = book.cover_url || '';
+                document.getElementById('notes').value = book.notes || '';
+                
+                editingId = id;
+                document.querySelector('#bookForm button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Güncelle';
+                
+                // Forma scroll
+                document.getElementById('bookForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Kitap yüklenemedi:', error);
+                alert('Kitap bilgileri yüklenemedi.');
+            }
+        }
+
+        // Kitap sil
+        async function deleteBook(id) {
+            if (!confirm('Bu kitabı silmek istediğinize emin misiniz?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/books/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Kitap silindi!');
+                    loadBooks();
+                    loadStats();
+                } else {
+                    const error = await response.json();
+                    alert('Hata: ' + (error.message || 'Bilinmeyen hata'));
+                }
+            } catch (error) {
+                console.error('Silme hatası:', error);
+                alert('Kitap silinemedi. API bağlantısını kontrol edin.');
+            }
+        }
+
+        // Settings yükle
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${API_URL}/settings`);
+                const settings = await response.json();
+                const settingsList = document.getElementById('settingsList');
+                
+                settingsList.innerHTML = Object.entries(settings).map(([key, setting]) => `
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="font-size: 0.85rem; color: #a0a0a0;">${setting.description || key}</label>
+                        <input type="text" id="setting_${key}" value="${setting.value || ''}" 
+                               style="width: 100%; padding: 0.5rem; background: rgba(0,0,0,0.4); border: 1px solid #2a2a2a; border-radius: 8px; color: #f8f8f8;">
+                        <button class="btn-small btn-edit" onclick="updateSetting('${key}')" style="margin-top: 0.25rem; width: 100%;">
+                            <i class="fas fa-save"></i> Kaydet
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Settings yüklenemedi:', error);
+                document.getElementById('settingsList').innerHTML = '<p style="color: #ff6b6b; text-align: center;">Ayarlar yüklenemedi.</p>';
+            }
+        }
+
+        // Setting güncelle
+        async function updateSetting(key) {
+            try {
+                const value = document.getElementById(`setting_${key}`).value;
+                const response = await fetch(`${API_URL}/settings/${key}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value })
+                });
+
+                if (response.ok) {
+                    alert('Ayar güncellendi!');
+                    loadSettings();
+                } else {
+                    alert('Ayar güncellenemedi.');
+                }
+            } catch (error) {
+                console.error('Setting güncelleme hatası:', error);
+                alert('Ayar güncellenemedi.');
+            }
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            checkApiStatus();
+            loadStats();
+            loadBooks();
+            loadSettings();
+            
+            // Her 30 saniyede bir güncelle
+            setInterval(() => {
+                checkApiStatus();
+                loadStats();
+                loadBooks();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
+
