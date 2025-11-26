@@ -1,4 +1,4 @@
-import { Github, Linkedin, Youtube, Twitter, Instagram } from 'lucide-react'
+import { Github, Linkedin, Instagram } from 'lucide-react'
 
 export default function ProfileSection() {
   return (
